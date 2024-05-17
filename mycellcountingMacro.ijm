@@ -68,7 +68,7 @@ for (i=0; i<lengthOf(channel_array); i++) {
 		}
 }
 
-selected_counter_stain = Dialog.getString();();
+selected_counter_stain = Dialog.getString();
 
 //looping the set measurements selections and make string variable with the correct arguments to call
 set_measurements_arguments = "";
