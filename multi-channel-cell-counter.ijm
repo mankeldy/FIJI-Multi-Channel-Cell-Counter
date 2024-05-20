@@ -1,6 +1,3 @@
-//inputDir=getDirectory("C:\\Users\\dylan\\Desktop\\2024_04_20_MCR_dual_BONCAT\\All data");
-//fileList=getFileList(inputDir);
-
 //Create the dialog GUI box for user
 Dialog.create("Multi-channel Microscopy");
 
@@ -144,10 +141,13 @@ for (i = 0; i < lengthOf(fileList); i++){
 	if(matches(fileList[i], iregex)){
 		print("-----Analyzing "+ fileList[i]+ "-----");
 
-		//splits the file name in to two halves to get the file name structure so that it can be used to open each channel
-		imageName_split_by_channel = split(fileList[i], target_substring);
-		print(imageName_split_by_channel[0]);
-
+		//splits the file name in to two halves to get the file name structure so that it can be used to open each channel		
+		//array of left (0) and right side (1) of the file name 
+		index_channel_substring = indexOf(fileList[i], target_substring);
+		imageName_split_by_channel = newArray(substring(fileList[i], 0, index_channel_substring),substring(fileList[i], index_channel_substring+lengthOf(target_substring)));
+		
+		//for error testing if the images aren't opening properly
+		//print(imageName_split_by_channel[0],imageName_split_by_channel[1]);
 	
 		//Opens the channel images in each field of view 
 		for (j = 0; j < lengthOf(selected_channels); j++){
@@ -155,7 +155,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 			open(inputDir+imageName_split_by_channel[0]+selected_channels[j]+imageName_split_by_channel[1]);
 			run("8-bit");
 			setOption("BlackBackground", true);
-			setAutoThreshold(selected_thresholds[j]);
+			setAutoThreshold(selected_thresholds[j] + " dark");
 			run("Convert to Mask");
 			}
 		
@@ -214,11 +214,10 @@ for (i = 0; i < lengthOf(fileList); i++){
 	
 	}
 	
-	
 
-
-
-
+selectWindow("Log");
+log_path = inputDir+"log.txt";
+saveAs("Text",log_path);
 
 
 //run("Clear Results");
