@@ -6,7 +6,7 @@ inputDir=getDirectory("image");
 Dialog.addDirectory("Images path",inputDir);
 
 //Add Channels and Thresholds
-Dialog.addMessage("Add each channel substring (e.g. _ch00) and what thresholding you'd like (see Image>Adjust>Threshold):");
+Dialog.addMessage("Add each channel substring (e.g. ch00) and what thresholding you'd like (see Image>Adjust>Threshold):");
 
 //List of threshold items in ImageJ
 threshold_items = newArray("Default","Huang","Intermodes","IsoData","IJ_IsoData","Li","MaxEntropy","Mean","MinError","Minimum","Moments","Otsu","Percentile","RenyiEntropy","Shanbhag","Triangle","Yen");
