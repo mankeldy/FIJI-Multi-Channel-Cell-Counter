@@ -100,9 +100,6 @@ unit=Dialog.getString();
 /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 
-
-
-//Array.print(fileList);
 print("-----Running------");
 print("Here are your variables:");
 print("path = ", inputDir);
@@ -113,6 +110,7 @@ for (i=0; i<lengthOf(selected_channels); i++) {
 print("Counter-stain = ",selected_counter_stain);
 print("Set Measurements Args = ",selected_set_measurements_arguments);
 print("Particle size = ",size," ",unit);
+
 //////////////////////////////////////////////////////////////
 
 run("Clear Results");
@@ -135,6 +133,10 @@ if (is_there_a_counter_stain==1){
 
 iregex = ".*" + target_substring +".*";
 
+
+////////////////////////////////////////////////
+/////////// Main Analysis Loop /////////////////
+////////////////////////////////////////////////
 for (i = 0; i < lengthOf(fileList); i++){
 	
 	//enters the if-statement for each unique field of view (based on the counter-stain images)
@@ -213,89 +215,9 @@ for (i = 0; i < lengthOf(fileList); i++){
 
 	
 	}
-	
 
+
+//Auto-save Log
 selectWindow("Log");
 log_path = inputDir+"log.txt";
 saveAs("Text",log_path);
-
-
-//run("Clear Results");
-//target = "ch00";
-//iregex = ".*" + target +".*";
-//close("*");
-//
-//for (i = 0; i < lengthOf(fileList); i++)
-//{ 
-//	run("Set Measurements...", "area_fraction redirect=None");
-//	if(matches(fileList[i], iregex)){
-//	print("-----Analyzing"+ fileList[i]+ "-----");
-//	imageName = substring(fileList[i], 0, lengthOf(fileList[i])-9);
-//	imageFile = inputDir+imageName;
-//		
-//	open(imageFile+"_ch01.tif");
-//	run("8-bit");
-//	setOption("BlackBackground", true);
-//	setAutoThreshold("Yen dark");
-//	run("Convert to Mask");
-//
-//	open(imageFile+"_ch02.tif");
-//	run("8-bit");
-//	setOption("BlackBackground", true);
-//	setAutoThreshold("Yen dark");
-//	run("Convert to Mask");
-//
-//	open(imageFile+"_ch00.tif");
-//	
-//	run("8-bit");
-//	setOption("BlackBackground", true);
-//	setAutoThreshold("Moments dark");
-//	run("Convert to Mask");
-//
-//	run("Watershed");
-//	prevNumResults = nResults;
-//	run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
-//	for (row = prevNumResults; row < nResults; row++){
-//		setResult("FileName", row, imageName+"_ch00.tif");
-//	}
-//	
-//	prevNumResults = nResults;
-//	run("Set Measurements...", "area_fraction redirect=["+imageName+"_ch01.tif]");
-//	run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
-//	for (row = prevNumResults; row < nResults; row++){
-//		setResult("FileName", row, imageName+"_ch01.tif");
-//	}
-//	prevNumResults = nResults;
-//	run("Set Measurements...", "area_fraction redirect=["+imageName+"_ch02.tif]");
-//	run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
-//	for (row = prevNumResults; row < nResults; row++){
-//		setResult("FileName", row, imageName+"_ch02.tif");
-//	}
-//	close("*");
-//	}
-//}
-//
-
-//open("D:\\graduate material\\2024_04_20_MCR_dual_BONCAT\\DMSL005\\"+image_name+"_ch00.tif"
-
-
-
-//run("8-bit");
-//setOption("BlackBackground", true)
-//setAutoThreshold("Default dark");
-//setThreshold(40,255,"raw");
-//run("Convert to Mask");
-
-//run("Watershed");
-
-//run("Analyze Particles...", "size=2-Infinity micron show=Outlines exclude summarize");
-
-
-
-//roiManager("add");
-
-//roiManager("Select",0);
-//roiManager("Delete");
-
-//close();
-//close();
