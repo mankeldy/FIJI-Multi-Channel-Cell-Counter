@@ -21,7 +21,7 @@ Write the substring (e.g. ch00, DAPI, etc.) for each channel that is contained w
 
 For each channel, select the desired threshold. This should be determined ahead of time (see *Image>Adjust>Threshold* or https://imagej.net/plugins/auto-threshold) (Note: For now, this is limited to automatic thresholds but future additions to the macro may allow for manual thresholding).
 
-Lastly, select whether a counterstain was used (for instance, we use DAPI to identify all microbial cells within the image) and which of the listed channels this applies to. If selected, the particles in this channel will be analyzed first and redirected to the other channels.
+Lastly, select whether a counterstain was used (for instance, we use DAPI to identify all microbial cells within the sample) and which of the listed channels this applies to. If selected, the particles in this channel will be analyzed first and redirected to the other channels.
 
 ### 3) Select Measurements
 Select what particle data you would like to report for your downstream analyses (see *Analyze>Set Measurements*).
