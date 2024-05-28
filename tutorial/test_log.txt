@@ -1,0 +1,13 @@
+-----Running------
+Here are your variables:
+path =  C:/your_image_path/FIJI-Multi-Channel-Cell-Counter/tutorial/
+C 1  =  ch00     Threshold = Moments
+C 2  =  ch01     Threshold = Yen
+C 3  =  ch02     Threshold = Yen
+Counter-stain =  ch00
+Set Measurements Args =   area_fraction
+Particle size =  2-Infinity   micron
+-----Analyzing DMSL005_well_1_MCR041_dual004_RAW_ch00.tif-----
+opening C:/your_image_path/FIJI-Multi-Channel-Cell-Counter/tutorial/DMSL005_well_1_MCR041_dual004_RAW_ch00.tif
+opening C:/your_image_path/FIJI-Multi-Channel-Cell-Counter/tutorial/DMSL005_well_1_MCR041_dual004_RAW_ch01.tif
+opening C:/your_image_path/FIJI-Multi-Channel-Cell-Counter/tutorial/DMSL005_well_1_MCR041_dual004_RAW_ch02.tif
