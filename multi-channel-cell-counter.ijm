@@ -9,7 +9,7 @@ Dialog.addDirectory("Images path",inputDir);
 Dialog.addMessage("Add each channel substring (e.g. ch00) and what thresholding you'd like (see Image>Adjust>Threshold):");
 
 //List of threshold items in ImageJ
-threshold_items = newArray("Default","Huang","Intermodes","IsoData","IJ_IsoData","Li","MaxEntropy","Mean","MinError","Minimum","Moments","Otsu","Percentile","RenyiEntropy","Shanbhag","Triangle","Yen");
+threshold_items = newArray("None","Default","Huang","Intermodes","IsoData","IJ_IsoData","Li","MaxEntropy","Mean","MinError","Minimum","Moments","Otsu","Percentile","RenyiEntropy","Shanbhag","Triangle","Yen");
 
 //List of available channels, can increase more if necessary (in the ideal world, a user could add new channels, but it's unclear if it's possible in the macro language)
 channel_array = newArray("C1","C2","C3","C4","C5","C6","C7","C8");
@@ -43,19 +43,24 @@ for (i=0; i<lengthOf(set_measurements_labels); i++) {
 }
 Dialog.addCheckboxGroup(rows,columns,set_measurements_labels,set_measurements_defaults);
 
+//Add watershed information
+Dialog.addMessage("Add watershed parameters (Default: 0.5, if this is adjusted then make sure you have the Adjustable Watershed plugin!):");
+Dialog.addCheckbox("Watershed?",true); 
+Dialog.addToSameRow();
+Dialog.addString("Tolerance", "0.5");
 
 //Add analyze particles information
 Dialog.addMessage("Add particle size information (see Analyze>Analyze Particles):");
-Dialog.addString("size", "2-Infinity");
+Dialog.addString("size", "0-Infinity");
 Dialog.addToSameRow();
 Dialog.addString("unit (e.g. micron, pixel)", "micron");
 
 //Show the dialog window
 Dialog.show();
 
-//////////////////////////////////////////
-//        Getting Variables            //
-/////////////////////////////////////////
+////////////////////////////////////////////////
+//        Getting Input Variables            //
+//////////////////////////////////////////////
 
 //Get path string
 inputDir=Dialog.getString();
@@ -93,9 +98,20 @@ if (selected_set_measurements_arguments == ""){
 	selected_set_measurements_arguments = "area_fraction";
 }
 
+//Watershed Inputs
+do_watershed=Dialog.getCheckbox();
+watershed_tolerance=Dialog.getString();
 
+if (do_watershed == 1) {
+    watershed_result = "true";
+} else {
+    watershed_result = "false";
+}
+
+//Analyze Particicles Inputs
 size=Dialog.getString();
 unit=Dialog.getString();
+
 //////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
@@ -109,6 +125,8 @@ for (i=0; i<lengthOf(selected_channels); i++) {
 
 print("Counter-stain = ",selected_counter_stain);
 print("Set Measurements Args = ",selected_set_measurements_arguments);
+print("Perform Watershed = ", watershed_result);
+print("Watershed Tolerance = ", watershed_tolerance);
 print("Particle size = ",size," ",unit);
 
 //////////////////////////////////////////////////////////////
@@ -124,7 +142,16 @@ if (is_there_a_counter_stain==1){
 		exit("Counter-stain selected but no counter-stain channel was specified. Please indicate correctly whether you used a counter-stain, and specify the correct channe!");
 	} else {
 	target_substring = selected_counter_stain;
-	selected_data_channels = Array.deleteValue(selected_channels, selected_counter_stain);
+		// Remove only the first occurrence of the counter-stain from selected_channels
+		selected_data_channels = newArray();
+		removed = false;
+		for (i = 0; i < lengthOf(selected_channels); i++) {
+		    if (!removed && selected_channels[i] == selected_counter_stain) {
+		        removed = true;
+		    } else {
+		        selected_data_channels = Array.concat(selected_data_channels, selected_channels[i]);
+		    }
+		}
 	}
 } else {
 	target_substring = selected_channels[0];
@@ -137,6 +164,10 @@ iregex = ".*" + target_substring +".*";
 ////////////////////////////////////////////////
 /////////// Main Analysis Loop /////////////////
 ////////////////////////////////////////////////
+
+// Variable to track if the counter-stain has been found
+counter_stain_found = false;
+
 for (i = 0; i < lengthOf(fileList); i++){
 	
 	//enters the if-statement for each unique field of view (based on the counter-stain images)
@@ -153,13 +184,31 @@ for (i = 0; i < lengthOf(fileList); i++){
 	
 		//Opens the channel images in each field of view 
 		for (j = 0; j < lengthOf(selected_channels); j++){
-			print("opening "+inputDir+imageName_split_by_channel[0]+selected_channels[j]+imageName_split_by_channel[1]);
-			open(inputDir+imageName_split_by_channel[0]+selected_channels[j]+imageName_split_by_channel[1]);
-			run("8-bit");
-			setOption("BlackBackground", true);
-			setAutoThreshold(selected_thresholds[j] + " dark");
-			run("Convert to Mask");
-			}
+		    img_path = inputDir + imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1];
+		    print("opening " + img_path);
+		    open(img_path);
+		    run("8-bit");
+		    setOption("BlackBackground", true);
+            
+		    // Check if this is the first occurrence of the counter-stain
+		    if (selected_channels[j] == selected_counter_stain && !counter_stain_found) {
+		    	// Selecting the window so we can change the name
+		    	selectWindow(imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
+		        // Rename the original image so it can be preserved and referred to later
+		        counter_stain_image_name = "counter_stain_image";
+		        rename(counter_stain_image_name);
+		        print("Renamed the counter-stain to: " + counter_stain_image_name);
+		        // Mark counter-stain as found
+		        counter_stain_found = true;
+		    }
+		    
+		    if (selected_thresholds[j] != "None") {
+		        setAutoThreshold(selected_thresholds[j] + " dark");
+		        run("Convert to Mask");
+		    } else {
+		        print("Skipping thresholding for channel: " + selected_channels[j]);
+		    } 
+		}
 		
 		//Setting initial set measurements
 		//If there is a counter-stain, only this line will apply for the counter-stain and the rest must be redirected
@@ -174,13 +223,19 @@ for (i = 0; i < lengthOf(fileList); i++){
 		
 		//Runs the counter stain first if there is one
 		if (is_there_a_counter_stain == 1){
-			selectWindow(imageName_split_by_channel[0]+selected_counter_stain+imageName_split_by_channel[1]);
+			selectWindow(counter_stain_image_name);
 		
 			//Watershed algorithm seperates overlapping blobs
-			run("Watershed");
+			//Runs the default Watershed algorithm if tolerance is 0.5, otherwise it uses the adjustable plugin (must be installed)
+			if (do_watershed == 1) {
+				if (watershed_tolerance == 0.5){
+					run("Watershed");
+				} else {
+					run("Adjustable Watershed", "tolerance="+watershed_tolerance);
+				}
+			}
 		
 			run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
-			
 			
 			for (row = prevNumResults; row < nResults; row++){
 				setResult("FileName", row, imageName_split_by_channel[0]+selected_counter_stain+imageName_split_by_channel[1]);
@@ -200,7 +255,13 @@ for (i = 0; i < lengthOf(fileList); i++){
 			}
 			else {
 				selectWindow(imageName_split_by_channel[0]+selected_data_channels[channel]+imageName_split_by_channel[1]);
-				run("Watershed");
+				if (do_watershed == 1) {
+					if (watershed_tolerance == 0.5){
+						run("Watershed");
+					} else {
+						run("Adjustable Watershed", "tolerance="+watershed_tolerance);
+					}
+				}
 			}
 			
 			run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
@@ -213,7 +274,8 @@ for (i = 0; i < lengthOf(fileList); i++){
 		close("*");
 		}
 
-	
+	// Reseting variable to track if the counter-stain has been found
+	counter_stain_found = false;
 	}
 
 
