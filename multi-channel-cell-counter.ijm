@@ -167,7 +167,6 @@ iregex = ".*" + target_substring +".*";
 
 // Variable to track if the counter-stain has been found
 counter_stain_found = false;
-
 for (i = 0; i < lengthOf(fileList); i++){
 	
 	//enters the if-statement for each unique field of view (based on the counter-stain images)
@@ -240,6 +239,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 			for (row = prevNumResults; row < nResults; row++){
 				setResult("FileName", row, imageName_split_by_channel[0]+selected_counter_stain+imageName_split_by_channel[1]);
 				setResult("Image Type", row, "counter-stain");
+				setResult("Cell Number", row, row-prevNumResults);
 			}
 		}
 		////////////////////////////////////////
@@ -268,7 +268,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 			for (row = prevNumResults; row < nResults; row++){
 				setResult("FileName", row, imageName_split_by_channel[0]+selected_data_channels[channel]+imageName_split_by_channel[1]);
 				setResult("Image Type", row, "data");
-				setResult("Column", row, row-prevNumResults);
+				setResult("Cell Number", row, row-prevNumResults);
 				}
 		}
 		//Closing the images for this field of view to start it fresh for the next one
