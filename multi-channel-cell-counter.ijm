@@ -268,6 +268,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 			for (row = prevNumResults; row < nResults; row++){
 				setResult("FileName", row, imageName_split_by_channel[0]+selected_data_channels[channel]+imageName_split_by_channel[1]);
 				setResult("Image Type", row, "data");
+				setResult("Column", row, row-prevNumResults);
 				}
 		}
 		//Closing the images for this field of view to start it fresh for the next one
