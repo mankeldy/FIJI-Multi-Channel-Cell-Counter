@@ -165,9 +165,9 @@ iregex = ".*" + target_substring +".*";
 /////////// Main Analysis Loop /////////////////
 ////////////////////////////////////////////////
 
-// Variable to track if the counter-stain has been found
-counter_stain_found = false;
 for (i = 0; i < lengthOf(fileList); i++){
+	// Variable to track if the counter-stain has been found
+	counter_stain_found = false;
 	
 	//enters the if-statement for each unique field of view (based on the counter-stain images)
 	if(matches(fileList[i], iregex)){
@@ -181,7 +181,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 		//for error testing if the images aren't opening properly
 		//print(imageName_split_by_channel[0],imageName_split_by_channel[1]);
 	
-		//Opens the channel images in each field of view 
+		//Opens every channel image in each field of view 
 		for (j = 0; j < lengthOf(selected_channels); j++){
 		    img_path = inputDir + imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1];
 		    print("opening " + img_path);
@@ -189,7 +189,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 		    run("8-bit");
 		    setOption("BlackBackground", true);
             
-		    // Check if this is the first occurrence of the counter-stain
+		    // Check if this is the first occurrence of the counter-stain in the sequence
 		    if (selected_channels[j] == selected_counter_stain && !counter_stain_found) {
 		    	// Selecting the window so we can change the name
 		    	selectWindow(imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
@@ -201,6 +201,7 @@ for (i = 0; i < lengthOf(fileList); i++){
 		        counter_stain_found = true;
 		    }
 		    
+		    //thresholding the image
 		    if (selected_thresholds[j] != "None") {
 		        setAutoThreshold(selected_thresholds[j] + " dark");
 		        run("Convert to Mask");
@@ -274,13 +275,11 @@ for (i = 0; i < lengthOf(fileList); i++){
 		//Closing the images for this field of view to start it fresh for the next one
 		close("*");
 		}
-
-	// Reseting variable to track if the counter-stain has been found
-	counter_stain_found = false;
 	}
 
 
 //Auto-save Log
 selectWindow("Log");
-log_path = inputDir+"log.txt";
+File.makeDirectory(inputDir+"/cell_counter_log");
+log_path = inputDir+"/cell_counter_log/cell_counter_log.txt";
 saveAs("Text",log_path);
