@@ -1,3 +1,6 @@
+//Clear the Log
+print("\\Clear")
+
 //Create the dialog GUI box for user
 Dialog.create("Multi-channel Microscopy");
 
@@ -12,7 +15,7 @@ Dialog.addMessage("Add each channel substring (e.g. ch00) and what thresholding 
 threshold_items = newArray("None","Default","Huang","Intermodes","IsoData","IJ_IsoData","Li","MaxEntropy","Mean","MinError","Minimum","Moments","Otsu","Percentile","RenyiEntropy","Shanbhag","Triangle","Yen");
 
 //List of available channels, can increase more if necessary (in the ideal world, a user could add new channels, but it's unclear if it's possible in the macro language)
-channel_array = newArray("C1","C2","C3","C4","C5","C6","C7","C8");
+channel_array = newArray("C1","C2","C3","C4","C5","C6");
 
 //Creating the Channel and Threshold boxes
 for (i=0; i<lengthOf(channel_array); i++) {
@@ -34,8 +37,8 @@ Dialog.addMessage("Make sure it is one of the channels listed above!");
 
 // Add Set Measurements checkboxes
 Dialog.addMessage("Select the information you'd like to report (see Analyze>Set Measurements):");
-rows = 9
-columns = 2
+rows = 3
+columns = 6
 set_measurements_labels = newArray("Area","Mean gray value", "Standard deviation", "Modal gray value", "Min & max gray value", "Centroid", "Center of mass", "Perimeter", "Bounding rectangle", "Fit ellipse", "shape descriptors", "Feret's diameter", "Integrated density", "Median", "Skewness", "Kurtosis", "Area fraction", "Stack position");
 set_measurements_defaults = newArray(lengthOf(set_measurements_labels));
 for (i=0; i<lengthOf(set_measurements_labels); i++) {
@@ -54,6 +57,13 @@ Dialog.addMessage("Add particle size information (see Analyze>Analyze Particles)
 Dialog.addString("size", "0-Infinity");
 Dialog.addToSameRow();
 Dialog.addString("unit (e.g. micron, pixel)", "micron");
+
+//Alignment
+Dialog.addCheckbox("Would you like to align your images using a transformation from MultiStackReg?", false);
+transformDir=getDirectory("image");
+Dialog.addFile("MultiStackReg Transformation File:",transformDir);
+Dialog.addString("Reference Channel for Transformation", "None");
+
 
 //Show the dialog window
 Dialog.show();
@@ -111,6 +121,11 @@ if (do_watershed == 1) {
 //Analyze Particicles Inputs
 size=Dialog.getString();
 unit=Dialog.getString();
+
+
+transformation_boolean = Dialog.getCheckbox();
+transformFile=Dialog.getString();
+transformation_channel=Dialog.getString();
 
 //////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
@@ -188,6 +203,11 @@ for (i = 0; i < lengthOf(fileList); i++){
 		    open(img_path);
 		    run("8-bit");
 		    setOption("BlackBackground", true);
+		    
+		    if (transformation_boolean == true && selected_channels[j] != transformation_channel){
+		    	print("Transforming "+imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
+		    	run("MultiStackReg", "stack_1="+imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]+" action_1=[Load Transformation File] file_1="+transformFile+" stack_2=None action_2=Ignore file_2=[] transformation=[Rigid Body]");
+		    }
             
 		    // Check if this is the first occurrence of the counter-stain in the sequence
 		    if (selected_channels[j] == selected_counter_stain && !counter_stain_found) {
