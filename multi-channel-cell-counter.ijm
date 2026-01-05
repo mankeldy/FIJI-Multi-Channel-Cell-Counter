@@ -22,6 +22,8 @@ for (i=0; i<lengthOf(channel_array); i++) {
     Dialog.addString(channel_array[i], "None");
     Dialog.addToSameRow();
     Dialog.addChoice("Threshold:", threshold_items);
+    Dialog.addToSameRow();
+    Dialog.addCheckbox("Use as counter-stain:",false);
 }
 
 //Select counter-stain
@@ -31,9 +33,13 @@ Dialog.addCheckbox("Counter-stain?",true);
 Dialog.addToSameRow(); 
 Dialog.addMessage("(unchecking will mean particles will not necessarily overlap between channels)");
 
-Dialog.addString("Counter-stain substring","");
-Dialog.addToSameRow();
-Dialog.addMessage("Make sure it is one of the channels listed above!");
+//Dialog.addString("Counter-stain substring","");
+//Dialog.addToSameRow();
+//Dialog.addMessage("Make sure it is one of the channels listed above!");
+Dialog.addChoice("Counter-stain Threshold:", threshold_items);
+Dialog.addToSameRow(); 
+Dialog.addMessage("Cannot be None!");
+
 
 // Add Set Measurements checkboxes
 Dialog.addMessage("Select the information you'd like to report (see Analyze>Set Measurements):");
@@ -57,6 +63,8 @@ Dialog.addMessage("Add particle size information (see Analyze>Analyze Particles)
 Dialog.addString("size", "0-Infinity");
 Dialog.addToSameRow();
 Dialog.addString("unit (e.g. micron, pixel)", "micron");
+Dialog.addString("circularity", "0-1");
+
 
 //Alignment
 Dialog.addCheckbox("Would you like to align your images using a transformation from MultiStackReg?", false);
@@ -68,9 +76,11 @@ Dialog.addString("Reference Channel for Transformation", "None");
 //Show the dialog window
 Dialog.show();
 
-////////////////////////////////////////////////
+//////////////////////////////////////////
+//////
 //        Getting Input Variables            //
-//////////////////////////////////////////////
+/////////////////////////////////////////
+/////
 
 //Get path string
 inputDir=Dialog.getString();
@@ -78,19 +88,22 @@ inputDir=Dialog.getString();
 //looping through the channel selections and putting them into new arrays without the None
 selected_channels = newArray();
 selected_thresholds = newArray();
+selected_counter_stains = newArray();
 
 for (i=0; i<lengthOf(channel_array); i++) {
 	current_channel = Dialog.getString();
 	current_threshold = Dialog.getChoice();
+	current_counter_stain = Dialog.getCheckbox();
 		if (current_channel!="None"){
 			selected_channels = Array.concat(selected_channels, current_channel);
 			selected_thresholds = Array.concat(selected_thresholds, current_threshold);
+			selected_counter_stains = Array.concat(selected_counter_stains, current_counter_stain);
 		}
 }
 
 is_there_a_counter_stain = Dialog.getCheckbox();
-selected_counter_stain = Dialog.getString();
-
+//selected_counter_stain = Dialog.getString();
+selected_counter_stain_threshold = Dialog.getChoice();
 
 //looping the set measurements selections and make string variable with the correct arguments to call
 selected_set_measurements_arguments = "";
@@ -109,7 +122,8 @@ if (selected_set_measurements_arguments == ""){
 }
 
 //Watershed Inputs
-do_watershed=Dialog.getCheckbox();
+
+do_watershed=Dialog.getCheckbox();
 watershed_tolerance=Dialog.getString();
 
 if (do_watershed == 1) {
@@ -121,6 +135,7 @@ if (do_watershed == 1) {
 //Analyze Particicles Inputs
 size=Dialog.getString();
 unit=Dialog.getString();
+circularity=Dialog.getString();
 
 
 transformation_boolean = Dialog.getCheckbox();
@@ -135,14 +150,17 @@ print("-----Running------");
 print("Here are your variables:");
 print("path = ", inputDir);
 for (i=0; i<lengthOf(selected_channels); i++) {
-	print("C",i+1," = ",selected_channels[i],"    Threshold =",selected_thresholds[i]);
+	print("C",i+1," = ",selected_channels[i],"    Threshold =",selected_thresholds[i],"       Counter-stain =",selected_counter_stains[i]);
 }
 
-print("Counter-stain = ",selected_counter_stain);
+//print("Counter-stain = ",selected_counter_stain);
+print("Counter-stain threshold=",selected_counter_stain_threshold);
 print("Set Measurements Args = ",selected_set_measurements_arguments);
 print("Perform Watershed = ", watershed_result);
 print("Watershed Tolerance = ", watershed_tolerance);
 print("Particle size = ",size," ",unit);
+print("Particle circularity = ",circularity);
+
 
 //////////////////////////////////////////////////////////////
 
@@ -152,43 +170,49 @@ fileList = getFileList(inputDir);
 
 //selects the counter-stain as the reference for determining file names
 //if there is no counter-stain, then the first channel is used.
-if (is_there_a_counter_stain==1){
-	if (selected_counter_stain == ""){
-		exit("Counter-stain selected but no counter-stain channel was specified. Please indicate correctly whether you used a counter-stain, and specify the correct channe!");
-	} else {
-	target_substring = selected_counter_stain;
-		// Remove only the first occurrence of the counter-stain from selected_channels
-		selected_data_channels = newArray();
-		removed = false;
-		for (i = 0; i < lengthOf(selected_channels); i++) {
-		    if (!removed && selected_channels[i] == selected_counter_stain) {
-		        removed = true;
-		    } else {
-		        selected_data_channels = Array.concat(selected_data_channels, selected_channels[i]);
-		    }
-		}
-	}
-} else {
-	target_substring = selected_channels[0];
-	selected_data_channels = selected_channels;
-}
+//if (is_there_a_counter_stain==1){
+//	if (selected_counter_stain == ""){
+//		exit("Counter-stain selected but no counter-stain channel was specified. Please indicate correctly whether you used a counter-stain, and specify the correct channe!");
+//	} else {
+//	target_substring = selected_counter_stain;
+//		// Remove only the first occurrence of the counter-stain from selected_channels
+//		selected_data_channels = newArray();
+//		removed = false;
+//		for (i = 0; i < lengthOf(selected_channels); i++) {
+//		    if (!removed && selected_channels[i] == selected_counter_stain) {
+//		        removed = true;
+//		    } else {
+//		        selected_data_channels = Array.concat(selected_data_channels, selected_channels[i]);
+//		    }
+//		}
+//	}
+//} else {
+//	target_substring = selected_channels[0];
+//	selected_data_channels = selected_channels;
+//}
+//
+//iregex = ".*" + target_substring +".*";
 
-iregex = ".*" + target_substring +".*";
-
-
+iregex = ".*" + selected_channels[0] +".*";
+target_substring=selected_channels[0];
 ////////////////////////////////////////////////
 /////////// Main Analysis Loop /////////////////
 ////////////////////////////////////////////////
+File.makeDirectory(inputDir+"/particle_images/");
 
 for (i = 0; i < lengthOf(fileList); i++){
-	// Variable to track if the counter-stain has been found
-	counter_stain_found = false;
 	
-	//enters the if-statement for each unique field of view (based on the counter-stain images)
+	//enters the if-statement for each unique field of view (based on the first channel)
 	if(matches(fileList[i], iregex)){
 		print("-----Analyzing "+ fileList[i]+ "-----");
+		
+		// Remove the file extension by splitting the string at the period and taking the first part
+		fileNameWithoutExtension = substring(fileList[i], 0, lastIndexOf(fileList[i], "."));
+		fov_name = replace(fileNameWithoutExtension, target_substring, "");
+		
+		counter_stain_array = newArray();
 
-		//splits the file name in to two halves to get the file name structure so that it can be used to open each channel		
+		//splits the file name in to two halves to get the file name structure so that it can be used to open each channel
 		//array of left (0) and right side (1) of the file name 
 		index_channel_substring = indexOf(fileList[i], target_substring);
 		imageName_split_by_channel = newArray(substring(fileList[i], 0, index_channel_substring),substring(fileList[i], index_channel_substring+lengthOf(target_substring)));
@@ -204,24 +228,33 @@ for (i = 0; i < lengthOf(fileList); i++){
 		    run("8-bit");
 		    setOption("BlackBackground", true);
 		    
-		    if (transformation_boolean == true && selected_channels[j] != transformation_channel){
+		    if (transformation_boolean == 1 && selected_channels[j] != transformation_channel){
 		    	print("Transforming "+imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
 		    	run("MultiStackReg", "stack_1="+imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]+" action_1=[Load Transformation File] file_1="+transformFile+" stack_2=None action_2=Ignore file_2=[] transformation=[Rigid Body]");
 		    }
             
-		    // Check if this is the first occurrence of the counter-stain in the sequence
-		    if (selected_channels[j] == selected_counter_stain && !counter_stain_found) {
-		    	// Selecting the window so we can change the name
-		    	selectWindow(imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
-		        // Rename the original image so it can be preserved and referred to later
-		        counter_stain_image_name = "counter_stain_image";
-		        rename(counter_stain_image_name);
-		        print("Renamed the counter-stain to: " + counter_stain_image_name);
-		        // Mark counter-stain as found
-		        counter_stain_found = true;
+            if (selected_counter_stains[j]==1) {
+            	print("Duplicating "+imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]+"to make it into a reference image later");
+            	run("Duplicate...", "title="+"Counter-Stain_"+imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
+		    	counter_stain_array = Array.concat(counter_stain_array,"Counter-Stain_"+imageName_split_by_channel[0] +selected_channels[j] + imageName_split_by_channel[1]);
 		    }
-		    
-		    //thresholding the image
+
+            
+            
+            
+//		    // Check if this is the first occurrence of the counter-stain in the sequence
+//		    if (selected_channels[j] == selected_counter_stain && !counter_stain_found) {
+//		    	// Selecting the window so we can change the name
+//		    	selectWindow(imageName_split_by_channel[0] + selected_channels[j] + imageName_split_by_channel[1]);
+//		        // Rename the original image so it can be preserved and referred to later
+//		        counter_stain_image_name = "counter_stain_image";
+//		        rename(counter_stain_image_name);
+//		        print("Renamed the counter-stain to: " + counter_stain_image_name);
+//		        // Mark counter-stain as found
+//		        counter_stain_found = true;
+//		    }
+
+			//thresholding the image
 		    if (selected_thresholds[j] != "None") {
 		        setAutoThreshold(selected_thresholds[j] + " dark");
 		        run("Convert to Mask");
@@ -230,20 +263,40 @@ for (i = 0; i < lengthOf(fileList); i++){
 		    } 
 		}
 		
+////Making the counter-stain image - Use this code if you want to merge your counter stain images
+//		if (lengthOf(counter_stain_array)==1) {
+//		    	print("only one counter-stain detected, going to duplicate and use it as the reference");
+//		    	selectWindow(counter_stain_array[0]);
+//		    	run("Duplicate...", "title=Result");
+//		    }
+//		    
+//		    if (lengthOf(counter_stain_array)==2) {
+//		    	print("multiple counter-stains detected, going to make a composite reference image");
+//		    	run("Calculator Plus", "i1="+counter_stain_array[0]+" i2="+counter_stain_array[1]+" operation=[Add: i2 = (i1+i2) x k1 + k2] k1=1 k2=0 create");
+//		    }
+//		    
+//		    if (lengthOf(counter_stain_array)>2) {
+//		    	exit("Sorry, this code only works for 2 reference images. This is the result of a quick fix rather than a long term solution... Big Sad... Please get in touch if you want to use more and I will update it accordingly");
+//		    }
+//		    
+//		counter_stain_image_name="Result";
+
+
+
 		//Setting initial set measurements
 		//If there is a counter-stain, only this line will apply for the counter-stain and the rest must be redirected
 		//If there is no counter-stain, then this line will be used for all images
 		run("Set Measurements...", selected_set_measurements_arguments+" "+"redirect=None");
-		
-		//////////////////////////////////////
-		//selecting the counter-stain image, if applicable.
-		/////////////////////////////////////
-		//prevNumResults allows data from each channel and FOV to be added to the same results page
-		prevNumResults = nResults;
-		
-		//Runs the counter stain first if there is one
 		if (is_there_a_counter_stain == 1){
-			selectWindow(counter_stain_image_name);
+		for (counter_stain_channel=0; counter_stain_channel < lengthOf(counter_stain_array); counter_stain_channel++){
+			//prevNumResults allows data from each channel and FOV to be added to the same results page
+			prevNumResults = nResults;
+			print(counter_stain_channel);
+			print("Running with counterstain:"+counter_stain_array[counter_stain_channel]);
+			selectWindow(counter_stain_array[counter_stain_channel]);
+			setAutoThreshold(selected_counter_stain_threshold + " dark");
+		    run("Convert to Mask");
+	
 		
 			//Watershed algorithm seperates overlapping blobs
 			//Runs the default Watershed algorithm if tolerance is 0.5, otherwise it uses the adjustable plugin (must be installed)
@@ -255,51 +308,50 @@ for (i = 0; i < lengthOf(fileList); i++){
 				}
 			}
 		
-			run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
+			run("Analyze Particles...", "size="+size+" "+unit+" "+"circularity="+circularity+" "+"show=Overlay overlay display exclude");
 			
 			for (row = prevNumResults; row < nResults; row++){
-				setResult("FileName", row, imageName_split_by_channel[0]+selected_counter_stain+imageName_split_by_channel[1]);
+				setResult("FileName", row, counter_stain_array[counter_stain_channel]);
+				setResult("Counter-stain", row, counter_stain_array[counter_stain_channel]);
 				setResult("Image Type", row, "counter-stain");
 				setResult("Cell Number", row, row-prevNumResults);
 			}
-		}
 		////////////////////////////////////////
 		// Analyzing data images
 		///////////////////////////////////////
-		for (channel = 0; channel < lengthOf(selected_data_channels);channel++){
+		for (channel = 0; channel < lengthOf(selected_channels);channel++){
+			print(channel);
 			prevNumResults = nResults;
 			
-			//if there is a counter-stain, then we need to reset the set measurements, keeping the counter-stain window open
-			//if there is no counter-stain, then we use the initial set measurements from above and instead must select each window and run watershed
-			if (is_there_a_counter_stain == 1){
-				run("Set Measurements...", selected_set_measurements_arguments+" "+"redirect=["+imageName_split_by_channel[0]+selected_data_channels[channel]+imageName_split_by_channel[1]+"]");
-			}
-			else {
-				selectWindow(imageName_split_by_channel[0]+selected_data_channels[channel]+imageName_split_by_channel[1]);
-				if (do_watershed == 1) {
-					if (watershed_tolerance == 0.5){
-						run("Watershed");
-					} else {
-						run("Adjustable Watershed", "tolerance="+watershed_tolerance);
-					}
-				}
-			}
+			run("Set Measurements...", selected_set_measurements_arguments+" "+"redirect=["+imageName_split_by_channel[0]+selected_channels[channel]+imageName_split_by_channel[1]+"]");
 			
-			run("Analyze Particles...", "size="+size+" "+unit+" "+"show=Overlay overlay display exclude");
+			
+			run("Analyze Particles...", "size="+size+" "+unit+" "+"circularity="+circularity+" "+"show=Overlay overlay display exclude");
 			for (row = prevNumResults; row < nResults; row++){
-				setResult("FileName", row, imageName_split_by_channel[0]+selected_data_channels[channel]+imageName_split_by_channel[1]);
+				setResult("FileName", row, imageName_split_by_channel[0]+selected_channels[channel]+imageName_split_by_channel[1]);
+				setResult("Counter-stain", row, counter_stain_array[counter_stain_channel]);
 				setResult("Image Type", row, "data");
 				setResult("Cell Number", row, row-prevNumResults);
 				}
 		}
+		selectWindow(counter_stain_array[counter_stain_channel]);
+		run("Flatten");
+		particle_image_savePath = inputDir+"/particle_images/"+counter_stain_array[counter_stain_channel]+"_PARTICLES.png";
+		saveAs("png", particle_image_savePath);
+		}
+		
+		} else{
+			exit("Please include a counter-stain :( Unfortunately this is old code that I could probably fix if it ever came up, but for right now at least select one..."
+		}
 		//Closing the images for this field of view to start it fresh for the next one
 		close("*");
 		}
-	}
+}
 
 
 //Auto-save Log
 selectWindow("Log");
 File.makeDirectory(inputDir+"/cell_counter_log");
 log_path = inputDir+"/cell_counter_log/cell_counter_log.txt";
-saveAs("Text",log_path);
+
+saveAs("Text",log_path);
